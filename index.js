@@ -8,10 +8,10 @@ console.error('AAAAAAAA PROACTIVE TEST FILE LOADED AAAAAAAA');
     // =========================
 
     // TESTING:
-const INACTIVITY_MS = 60000; // 1 minute
+//const INACTIVITY_MS = 60000; // 1 minute
 
 // NORMAL:
-// const INACTIVITY_MS = (Math.floor(Math.random() * 90) + 90) * 60 * 1000; // random 90–180 minutes
+ const INACTIVITY_MS = (Math.floor(Math.random() * 121) + 60) * 60 * 1000;
 
     const CHECK_INTERVAL_MS = 60 * 1000;
 
@@ -169,9 +169,9 @@ async function fireProactive() {
         log('Internal proactive send flag cleared.');
     }, 15000);
 }, 300);
-
-        setTimeout(cleanupTrigger, 8000);
-        setTimeout(cleanupTrigger, 12000);
+        setTimeout(cleanupTrigger, 500);
+        setTimeout(cleanupTrigger, 1500);
+        setTimeout(cleanupTrigger, 4000);
 
         log('Proactive trigger sent and DOM cleanup scheduled.');
 
