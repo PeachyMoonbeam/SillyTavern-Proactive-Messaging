@@ -1,15 +1,17 @@
 (function () {
     'use strict';
+console.error('AAAAAAAA PROACTIVE TEST FILE LOADED AAAAAAAA');
+    console.log('[Proactive] TEST BUILD LOADED - 1 MINUTE TIMER');
 
     // =========================
     // CONFIG
     // =========================
 
     // TESTING:
-//const INACTIVITY_MS = 60000; // 1 minute
+const INACTIVITY_MS = 60000; // 1 minute
 
 // NORMAL:
- const INACTIVITY_MS = (Math.floor(Math.random() * 90) + 90) * 60 * 1000; // random 90–180 minutes
+// const INACTIVITY_MS = (Math.floor(Math.random() * 90) + 90) * 60 * 1000; // random 90–180 minutes
 
     const CHECK_INTERVAL_MS = 60 * 1000;
 
@@ -78,8 +80,8 @@ Just speak to her like you noticed the silence and wanted to reach for her.`;
     }
 
     function resetTimer(reason) {
-    window.currentInactivityMs =
-    (Math.floor(Math.random() * 90) + 90) * 60 * 1000;
+    window.currentInactivityMs = INACTIVITY_MS;
+    //(Math.floor(Math.random() * 90) + 90) * 60 * 1000;
 
     setLastUserMessageTime();
     setHasFired(false);
@@ -138,28 +140,38 @@ async function fireProactive() {
         return;
     }
 
-    function hideTriggerFromDom() {
-        document.querySelectorAll('#chat .mes').forEach(el => {
-            const text = el.querySelector('.mes_text')?.textContent || '';
-            if (text.includes('Mhyana has been quiet for a while')) {
-                el.style.display = 'none';
-                el.setAttribute('data-proactive-hidden', 'true');
-            }
-        });
-    }
-
-    function removeTriggerFromChatArray() {
+    function cleanupTrigger() {
         const ctx = window.SillyTavern?.getContext?.();
-        if (!ctx?.chat) return;
 
-        for (let i = ctx.chat.length - 1; i >= 0; i--) {
-            const msg = ctx.chat[i];
-            if (msg?.mes?.includes?.('Mhyana has been quiet for a while')) {
-                ctx.chat.splice(i, 1);
-                log('Removed proactive trigger from chat array.');
-                break;
+        // Remove ALL trigger messages from chat array
+        if (ctx?.chat && Array.isArray(ctx.chat)) {
+            let removed = 0;
+
+            for (let i = ctx.chat.length - 1; i >= 0; i--) {
+                const msg = ctx.chat[i];
+
+                if (msg?.mes?.includes?.('Mhyana has been quiet for a while')) {
+                    ctx.chat.splice(i, 1);
+                    removed++;
+                }
+            }
+
+            if (removed > 0) {
+                log(`Removed ${removed} proactive trigger(s) from chat array.`);
             }
         }
+
+        // Remove ALL visible trigger messages from DOM
+        document.querySelectorAll('#chat .mes').forEach(el => {
+            const text = el.querySelector('.mes_text')?.textContent || '';
+
+            if (text.includes('Mhyana has been quiet for a while')) {
+                el.remove();
+            }
+        });
+
+        // Force save updated chat state
+        ctx?.saveChat?.();
     }
 
     setBusy(true);
@@ -172,24 +184,18 @@ async function fireProactive() {
         textarea.dispatchEvent(new Event('input', { bubbles: true }));
 
         setTimeout(() => {
-    sendButton?.click();
-    sendButton?.dispatchEvent(new MouseEvent('click', {
-        bubbles: true,
-        cancelable: true,
-        view: window
-    }));
-}, 300);
+            sendButton.click();
+        }, 300);
 
-        setTimeout(hideTriggerFromDom, 400);
-        setTimeout(hideTriggerFromDom, 800);
-        setTimeout(hideTriggerFromDom, 1500);
+        // Cleanup multiple times to catch async render timing
+        setTimeout(cleanupTrigger, 400);
+        setTimeout(cleanupTrigger, 800);
+        setTimeout(cleanupTrigger, 1500);
+        setTimeout(cleanupTrigger, 3000);
+        setTimeout(cleanupTrigger, 8000);
 
-        setTimeout(() => {
-            hideTriggerFromDom();
-            removeTriggerFromChatArray();
-        }, 8000);
+        log('Proactive trigger sent and cleanup scheduled.');
 
-        log('Proactive trigger sent and scheduled for hiding.');
     } catch (err) {
         console.error('[Proactive] Generation error:', err);
         setHasFired(false);
@@ -197,7 +203,6 @@ async function fireProactive() {
         setBusy(false);
     }
 }
-
     // =========================
     // TIMER
     // =========================
@@ -271,8 +276,8 @@ async function fireProactive() {
     // Clear stale busy flag from previous reload/crash.
     setBusy(false);
 
-    window.currentInactivityMs =
-        (Math.floor(Math.random() * 90) + 90) * 60 * 1000;
+    window.currentInactivityMs = INACTIVITY_MS;
+        //(Math.floor(Math.random() * 90) + 90) * 60 * 1000;
 
     log(`Initial proactive timer set to ${Math.floor(window.currentInactivityMs / 60000)} minutes`);
 
