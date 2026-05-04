@@ -1,0 +1,12 @@
+{
+  "display_name": "Proactive Messaging",
+  "loading_order": 1,
+  "requires": [],
+  "optional": [],
+  "js": "index.js",
+  "css": "",
+  "author": "Mhyana",
+  "version": "1.0.0",
+  "homePage": "",
+  "auto_update": false
+}
