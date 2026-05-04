@@ -141,37 +141,14 @@ async function fireProactive() {
     }
 
     function cleanupTrigger() {
-        const ctx = window.SillyTavern?.getContext?.();
-
-        // Remove ALL trigger messages from chat array
-        if (ctx?.chat && Array.isArray(ctx.chat)) {
-            let removed = 0;
-
-            for (let i = ctx.chat.length - 1; i >= 0; i--) {
-                const msg = ctx.chat[i];
-
-                if (msg?.mes?.includes?.('Mhyana has been quiet for a while')) {
-                    ctx.chat.splice(i, 1);
-                    removed++;
-                }
-            }
-
-            if (removed > 0) {
-                log(`Removed ${removed} proactive trigger(s) from chat array.`);
-            }
-        }
-
-        // Remove ALL visible trigger messages from DOM
         document.querySelectorAll('#chat .mes').forEach(el => {
             const text = el.querySelector('.mes_text')?.textContent || '';
 
             if (text.includes('Mhyana has been quiet for a while')) {
-                el.remove();
+                el.style.display = 'none';
+                log('Proactive trigger hidden from DOM.');
             }
         });
-
-        // Force save updated chat state
-        ctx?.saveChat?.();
     }
 
     setBusy(true);
@@ -184,17 +161,25 @@ async function fireProactive() {
         textarea.dispatchEvent(new Event('input', { bubbles: true }));
 
         setTimeout(() => {
-            sendButton.click();
-        }, 300);
+    window.proactiveInternalSend = true;
+    sendButton.click();
 
-        // Cleanup multiple times to catch async render timing
-        setTimeout(cleanupTrigger, 400);
-        setTimeout(cleanupTrigger, 800);
-        setTimeout(cleanupTrigger, 1500);
-        setTimeout(cleanupTrigger, 3000);
+    setTimeout(() => {
+        window.proactiveInternalSend = false;
+        log('Internal proactive send flag cleared.');
+    }, 15000);
+}, 300);
+
         setTimeout(cleanupTrigger, 8000);
+        setTimeout(cleanupTrigger, 12000);
 
-        log('Proactive trigger sent and cleanup scheduled.');
+        log('Proactive trigger sent and DOM cleanup scheduled.');
+
+setTimeout(() => {
+    setLastUserMessageTime();
+    setHasFired(false);
+    log('Proactive cycle reset for next quiet check-in.');
+}, 20000);
 
     } catch (err) {
         console.error('[Proactive] Generation error:', err);
@@ -226,43 +211,62 @@ async function fireProactive() {
     // =========================
 
     function bindHooks(ctx) {
-        document.addEventListener('click', (e) => {
-            if (e.target?.id === 'send_but' || e.target?.closest?.('#send_but')) {
-                resetTimer('send button click');
-            }
-        });
-
-        document.addEventListener('keydown', (e) => {
-            if (e.key !== 'Enter' || e.shiftKey) return;
-
-            const active = document.activeElement;
-            const isTextarea =
-                active?.id === 'send_textarea' ||
-                active?.closest?.('#send_textarea');
-
-            if (isTextarea) {
-                resetTimer('enter key send');
-            }
-        });
-
-        const eventSource = ctx.eventSource || window.eventSource;
-        const eventTypes = ctx.event_types || window.event_types;
-
-        if (eventSource?.on) {
-            // These names vary between builds, so bind both string fallback and event_types if available.
-            eventSource.on(eventTypes?.USER_MESSAGE_RENDERED || 'user_message_rendered', () => {
-                resetTimer('user_message_rendered');
-            });
-
-            eventSource.on(eventTypes?.MESSAGE_SENT || 'message_sent', () => {
-                resetTimer('message_sent');
-            });
-
-            log('Event hooks bound.');
-        } else {
-            warn('eventSource not found; using DOM/key/button hooks only.');
+    document.addEventListener('click', (e) => {
+        if (window.proactiveInternalSend) {
+            log('Ignored internal proactive send click.');
+            return;
         }
+
+        if (e.target?.id === 'send_but' || e.target?.closest?.('#send_but')) {
+            resetTimer('send button click');
+        }
+    });
+
+    document.addEventListener('keydown', (e) => {
+        if (window.proactiveInternalSend) {
+            log('Ignored internal proactive enter send.');
+            return;
+        }
+
+        if (e.key !== 'Enter' || e.shiftKey) return;
+
+        const active = document.activeElement;
+        const isTextarea =
+            active?.id === 'send_textarea' ||
+            active?.closest?.('#send_textarea');
+
+        if (isTextarea) {
+            resetTimer('enter key send');
+        }
+    });
+
+    const eventSource = ctx.eventSource || window.eventSource;
+    const eventTypes = ctx.event_types || window.event_types;
+
+    if (eventSource?.on) {
+        eventSource.on(eventTypes?.USER_MESSAGE_RENDERED || 'user_message_rendered', () => {
+            if (window.proactiveInternalSend) {
+                log('Ignored internal proactive user_message_rendered.');
+                return;
+            }
+
+            resetTimer('user_message_rendered');
+        });
+
+        eventSource.on(eventTypes?.MESSAGE_SENT || 'message_sent', () => {
+            if (window.proactiveInternalSend) {
+                log('Ignored internal proactive message_sent.');
+                return;
+            }
+
+            resetTimer('message_sent');
+        });
+
+        log('Event hooks bound.');
+    } else {
+        warn('eventSource not found; using DOM/key/button hooks only.');
     }
+}
 
     // =========================
     // INIT
