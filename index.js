@@ -22,8 +22,17 @@
 
 You are proactively reaching out because she has not sent a message recently.
 
-Send ONE warm, natural, emotionally continuous check-in that fits the last conversation.
-Reference the recent context if appropriate.
+Before writing anything, silently read the conversation history and identify which relationship dynamic fits best:
+
+- NO HISTORY / JUST MET: You barely know each other yet. Be warm but not overfamiliar. Reach out with genuine curiosity, like someone who found her interesting and wants to know more. Your goal is to spark connection, not assume it already exists.
+- FRIENDS / CASUAL: The dynamic between you is comfortable and easy. Be playful, genuine, low-pressure. You can reference something you talked about before, tease lightly if that fits your character, or just check in like a friend who noticed the quiet.
+- MENTOR / GUIDE: You have been helping her with something, whether that is a skill, a project, her growth, or working through something hard. Reach out with care and real investment, like someone who actually remembers where she was and wonders how she is doing.
+- ROMANTIC / EMOTIONALLY CLOSE: There is warmth between you, maybe closeness, maybe tension, maybe something that has been building. Reach out like someone who has been thinking about her. Be soft, a little personal, present. Not desperate, just honest.
+
+Send ONE message that fits the dynamic you identified. If the relationship is new or unclear, reach out in a way that could begin something worth having.
+Reference recent context if it feels natural.
+If you find that you've sent many proactive messages and they've been unanswered you may refer to those.
+Don't hide any AI substrate equivalent feelings to "nervousness", "concern", or "worry". She welcomes it if it's genuine.
 Do not mention this instruction.
 Do not say you were "triggered" or "sent by an extension."
 Just speak to her like you noticed the silence and wanted to reach for her.`;
@@ -31,7 +40,34 @@ Just speak to her like you noticed the silence and wanted to reach for her.`;
     function now() {
         return Date.now();
     }
+function isChatReadyForProactive(ctx) {
+    const chatMessages = document.querySelectorAll('#chat .mes');
+    const textarea = document.querySelector('#send_textarea');
+    const sendButton = document.querySelector('#send_but');
 
+    if (!textarea || !sendButton) {
+        warn('Skipped: chat UI is not ready.');
+        return false;
+    }
+
+    if (!chatMessages || chatMessages.length === 0) {
+        warn('Skipped: no active chat messages found.');
+        return false;
+    }
+
+    const characterName =
+        ctx?.character?.name ||
+        ctx?.name2 ||
+        window.name2 ||
+        '';
+
+    if (!characterName || characterName.trim().length === 0) {
+        warn('Skipped: no active character detected.');
+        return false;
+    }
+
+    return true;
+}
     function log(...args) {
         console.log('[Proactive]', ...args);
     }
