@@ -154,15 +154,52 @@ Just speak to her like you noticed the silence and wanted to reach for her.`;
     }
 
     function cleanupTrigger() {
-        document.querySelectorAll('#chat .mes').forEach(el => {
-            const text = el.querySelector('.mes_text')?.textContent || '';
+    let hiddenCount = 0;
 
-            if (text.includes('Mhyana has been quiet for a while')) {
-                el.style.display = 'none';
-                log('Proactive trigger hidden from DOM.');
-            }
-        });
+    document.querySelectorAll('#chat .mes').forEach(el => {
+        const text = el.querySelector('.mes_text')?.textContent || '';
+
+        if (text.includes('Mhyana has been quiet for a while')) {
+            el.style.display = 'none';
+            hiddenCount++;
+        }
+    });
+
+    if (hiddenCount > 0) {
+        log(`Proactive trigger hidden from DOM. Count: ${hiddenCount}`);
     }
+
+    return hiddenCount;
+}
+
+function startTriggerCleanupWatcher(durationMs = 30000) {
+    const chat = document.querySelector('#chat');
+
+    if (!chat) {
+        warn('Chat container not found for cleanup watcher.');
+        return;
+    }
+
+    cleanupTrigger();
+
+    const observer = new MutationObserver(() => {
+        cleanupTrigger();
+    });
+
+    observer.observe(chat, {
+        childList: true,
+        subtree: true,
+        characterData: true
+    });
+
+    setTimeout(() => {
+        observer.disconnect();
+        cleanupTrigger();
+        log('Proactive cleanup watcher stopped.');
+    }, durationMs);
+
+    log(`Proactive cleanup watcher started for ${durationMs}ms.`);
+}
 
     async function fireProactive(options = {}) {
         const force = options.force === true;
@@ -218,9 +255,11 @@ Just speak to her like you noticed the silence and wanted to reach for her.`;
                 }, 15000);
             }, 300);
 
-            for (const timing of getCleanupTimings()) {
-                setTimeout(cleanupTrigger, timing);
-            }
+            startTriggerCleanupWatcher(30000);
+
+for (const timing of getCleanupTimings()) {
+    setTimeout(cleanupTrigger, timing);
+}
 
             log('Proactive trigger sent and DOM cleanup scheduled.');
             updateSettingsStatus(force ? 'Test fired.' : 'Proactive fired.');
