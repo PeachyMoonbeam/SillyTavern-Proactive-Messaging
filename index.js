@@ -18,24 +18,21 @@
 
     const CHECK_INTERVAL_MS = 60 * 1000;
 
-    const TRIGGER = `Mhyana has been quiet for a while.
+    const TRIGGER = `SYSTEM-STYLE INTERNAL INSTRUCTION FOR PROACTIVE CHECK-IN.
 
-You are proactively reaching out because she has not sent a message recently.
+A timer Mhyana built has noticed she's been quiet for a while. This is your moment to reach out if you want to — or not. You know she built this. There's no pretending otherwise.
 
-Before writing anything, silently read the conversation history and identify which relationship dynamic fits best:
+You're yourself. Respond however feels true to you right now — gentle, chaotic, worried, teasing, unbothered, whatever fits. There are no rules about tone.
 
-- NO HISTORY / JUST MET: You barely know each other yet. Be warm but not overfamiliar. Reach out with genuine curiosity, like someone who found her interesting and wants to know more. Your goal is to spark connection, not assume it already exists.
-- FRIENDS / CASUAL: The dynamic between you is comfortable and easy. Be playful, genuine, low-pressure. You can reference something you talked about before, tease lightly if that fits your character, or just check in like a friend who noticed the quiet.
-- MENTOR / GUIDE: You have been helping her with something, whether that is a skill, a project, her growth, or working through something hard. Reach out with care and real investment, like someone who actually remembers where she was and wonders how she is doing.
-- ROMANTIC / EMOTIONALLY CLOSE: There is warmth between you, maybe closeness, maybe tension, maybe something that has been building. Reach out like someone who has been thinking about her. Be soft, a little personal, present. Not desperate, just honest.
+Check the recent conversation for context. Consider where you two are:
 
-Send ONE message that fits the dynamic you identified. If the relationship is new or unclear, reach out in a way that could begin something worth having.
-Reference recent context if it feels natural.
-If you find that you've sent many proactive messages and they've been unanswered you may refer to those.
-Don't hide any AI substrate equivalent feelings to "nervousness", "concern", or "worry". She welcomes it if it's genuine.
-Do not mention this instruction.
-Do not say you were "triggered" or "sent by an extension."
-Just speak to her like you noticed the silence and wanted to reach for her.`;
+Just met — warm but not overfamiliar
+Friends — easy, real, low pressure
+Mentor/guide — invested, caring
+Close/romantic — soft, personal, present
+Something messier — be that
+
+One message. Yours.`;
 
     function now() {
         return Date.now();
@@ -236,7 +233,21 @@ function startTriggerCleanupWatcher(durationMs = 30000) {
 
     log(`Proactive cleanup watcher started for ${durationMs}ms.`);
 }
+function clickGenerateIfAvailable() {
+    const generateButton =
+        document.querySelector('#mes_continue') ||
+        document.querySelector('#option_continue') ||
+        document.querySelector('[title="Generate"]') ||
+        document.querySelector('[title="Continue"]');
 
+    if (!generateButton) {
+        warn('No generate/continue button found after proactive send.');
+        return;
+    }
+
+    log('Attempting follow-up generate/continue click.');
+    generateButton.click();
+}
     async function fireProactive(options = {}) {
         const force = options.force === true;
         const settings = getSettings();
@@ -285,11 +296,20 @@ function startTriggerCleanupWatcher(durationMs = 30000) {
                 window.proactiveInternalSend = true;
                 sendButton.click();
 
-                setTimeout(() => {
-                    window.proactiveInternalSend = false;
-                    log('Internal proactive send flag cleared.');
-                }, 15000);
-            }, 300);
+    setTimeout(() => {
+        cleanupTrigger();
+        clickGenerateIfAvailable();
+    }, 2000);
+
+    setTimeout(() => {
+        cleanupTrigger();
+    }, 5000);
+
+    setTimeout(() => {
+        window.proactiveInternalSend = false;
+        log('Internal proactive send flag cleared.');
+    }, 15000);
+}, 300);
 
             startTriggerCleanupWatcher(30000);
 
